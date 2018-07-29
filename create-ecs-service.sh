@@ -20,6 +20,8 @@ aws cloudformation deploy --stack-name ${ECS_SERVICE_STACK_NAME} --template-file
 RepositoryName=${REPOSITORY_NAME} \
 ProjectName="${PROJECT_NAME}" \
 ProjectVersion="${PROJECT_VERSION}" \
+VPC=${MY_VPC} \
+Subnets=${MY_SUBNETS} \
 MyIP="${MY_IP}" \
 --profile ${AWS_PROFILE} \
 --region ${AWS_REGION} \

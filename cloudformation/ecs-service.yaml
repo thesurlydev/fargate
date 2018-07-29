@@ -6,6 +6,10 @@ Parameters:
     Type: String
   ProjectVersion:
     Type: String
+  VPC:
+    Type: String
+  Subnets:
+    Type: CommaDelimitedList
   RepositoryName:
     Type: String
   ContainerCpu:
@@ -26,14 +30,6 @@ Parameters:
     Type: Number
     Default: 8080
 
-Mappings:
-  '515292396565':
-    us-west-2:
-      VPC: "vpc-7bb51b1c"
-      Subnets:
-      - subnet-61dd1306
-      - subnet-c23c6498
-      - subnet-4aea0b03
 
 Resources:
   SecurityGroup:
@@ -41,7 +37,7 @@ Resources:
     Properties:
       GroupName: !Join ["", [!Ref ProjectName, "-ecs-sg"]]
       GroupDescription: "Fargate service security group"
-      VpcId: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "VPC"]
+      VpcId: !Ref VPC
       SecurityGroupIngress:
         -
           IpProtocol: tcp
@@ -141,6 +137,6 @@ Resources:
           AssignPublicIp: ENABLED
           SecurityGroups:
             - !Ref SecurityGroup
-          Subnets: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "Subnets"]
+          Subnets: !Ref Subnets
       ServiceName: !Ref ProjectName
       TaskDefinition: !Ref TaskDefinition

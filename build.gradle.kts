@@ -75,12 +75,10 @@ tasks.withType<Test> {
 
 dependencies {
   val sparkKotlinVersion: String by project
-  val sparkVersion: String by project
 
   api("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
   compile("com.fasterxml.jackson.module:jackson-module-kotlin")
   compile("com.sparkjava:spark-kotlin:$sparkKotlinVersion")
-  compile("com.sparkjava:spark-template-mustache:$sparkVersion")
   compile("org.slf4j:slf4j-log4j12")
 }
 

@@ -13,6 +13,8 @@ ParameterKey=DesiredCount,ParameterValue=${ECS_SERVICE_DESIRED_COUNT} \
 ParameterKey=ProjectVersion,ParameterValue="${PROJECT_VERSION}" \
 ParameterKey=ProjectName,ParameterValue="${PROJECT_NAME}" \
 ParameterKey=MyIP,ParameterValue="${MY_IP}" \
+ParameterKey=VPC,ParameterValue=${MY_VPC} \
+ParameterKey=Subnets,ParameterValue=${MY_SUBNETS} \
 ParameterKey=RepositoryName,ParameterValue="${REPOSITORY_NAME}" \
 --profile ${AWS_PROFILE} \
 --region ${AWS_REGION} \

@@ -3,7 +3,6 @@
 
 Minimal template for AWS Fargate.
 
-
 ## Prerequisite
 
 Create a file to hold project-agnostic variables. (Sourced from `common.sh`)
@@ -21,6 +20,8 @@ MY_VPC=[YOUR_VPC_ID]
 MY_SUBNETS=[SUBNETS]
 PROJECT_NAMESPACE=[YOUR_NAMESPACE]
 ```
+
+Assumes you're deploying to existing subnets defined by `[MY_SUBNETS]` in an existing VPC defined by `[MY_VPC]`
 
 By default the ECS service and database are locked down and allow ingress from the IP address defined by `MY_IP`  
 
