@@ -4,8 +4,6 @@
 Minimal template for AWS Fargate.
 
 
-
-
 ## Prerequisite
 
 Create a file to hold project-agnostic variables. (Sourced from `common.sh`)
@@ -31,16 +29,22 @@ By default the ECS service and database are locked down and allow ingress from t
 
 Optional: To create an Aurora cluster:
 
-  ./create-db.sh
+```
+./create-db.sh`
+```
   
 Build and initial setup of a Fargate cluster:
 
-  ./create-ecs-service.sh
-  
+```
+./create-ecs-service.sh`
+```
+ 
   
 ## Build
 
-  ./gradlew clean build jibDockerBuild  
+```
+./gradlew clean build jibDockerBuild
+```    
   
 ## Deploying  
   
