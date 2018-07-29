@@ -1,0 +1,106 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: RDS Aurora PostgreSQL cluster
+
+Parameters:
+  MyIP:
+    Type: String
+  VPC:
+    Type: String
+  Subnets:
+    Type: CommaDelimitedList
+  DatabaseName:
+    Type: String
+  DatabasePort:
+    Type: Number
+    Default: 5432
+  DatabaseUsername:
+    AllowedPattern: "[a-zA-Z0-9]+"
+    ConstraintDescription: must be between 1 to 16 alphanumeric characters.
+    Description: The database admin account user name, between 1 to 16 alphanumeric characters.
+    MaxLength: '16'
+    MinLength: '1'
+    Type: String
+  DatabasePassword:
+    AllowedPattern: "[a-zA-Z0-9]+"
+    ConstraintDescription: must be between 8 to 41 alphanumeric characters.
+    Description: The database admin account password, between 8 to 41 alphanumeric characters.
+    MaxLength: '41'
+    MinLength: '8'
+    NoEcho: 'true'
+    Type: String
+  DBClusterParameterGroupName:
+    Type: String
+    Default: "default.aurora-postgresql9.6"
+  InstanceType:
+    Type: String
+    Default: "db.r4.large"
+  BackupRetentionPeriod:
+    Type: Number
+    Default: 1
+  PubliclyAccessible:
+    Type: String
+    Default: true
+  PreferredBackupWindow:
+    Type: String
+    Default: "01:00-02:00"
+  PreferredMaintenanceWindow:
+    Type: String
+    Default: "mon:03:00-mon:04:00"
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Join ["", [!Ref DatabaseName, "-db-sg"]]
+      GroupDescription: !Join ["", ["Security Group for ", !Ref DatabaseName ]]
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: !Ref DatabasePort
+        ToPort: !Ref DatabasePort
+        CidrIp: !Ref MyIP
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: CloudFormation managed DB subnet group.
+      SubnetIds: !Ref Subnets
+
+  DatabaseCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DBClusterIdentifier: !Join ["", [!Ref DatabaseName, "-db-cluster"]]
+      Engine: aurora-postgresql
+      DBClusterParameterGroupName: !Ref DBClusterParameterGroupName
+      Port: !Ref DatabasePort
+      DatabaseName: !Ref DatabaseName
+      MasterUsername: !Ref DatabaseUsername
+      MasterUserPassword: !Ref DatabasePassword
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      PreferredBackupWindow: !Ref PreferredBackupWindow
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref SecurityGroup
+
+  DBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-postgresql
+      DBClusterIdentifier: !Ref DatabaseCluster
+      DBInstanceClass: !Ref InstanceType
+      DBInstanceIdentifier: !Join ["", [!Ref DatabaseName, "-instance1"]]
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      PubliclyAccessible: !Ref PubliclyAccessible
+
+  DBInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-postgresql
+      DBClusterIdentifier: !Ref "DatabaseCluster"
+      DBInstanceClass: !Ref InstanceType
+      DBInstanceIdentifier: !Join ["", [!Ref DatabaseName, "-instance2"]]
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      PubliclyAccessible: !Ref PubliclyAccessible

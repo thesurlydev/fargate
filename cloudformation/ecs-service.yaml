@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECS Service
+
+Parameters:
+  ProjectName:
+    Type: String
+  ProjectVersion:
+    Type: String
+  RepositoryName:
+    Type: String
+  ContainerCpu:
+    Type: Number
+    Default: 512
+  ContainerMemory:
+    Type: Number
+    Default: 1024
+  DesiredCount:
+    Type: Number
+    Default: 1
+  MyIP:
+    Type: String
+  IngressFromPort:
+    Type: Number
+    Default: 8080
+  IngressToPort:
+    Type: Number
+    Default: 8080
+
+Mappings:
+  '515292396565':
+    us-west-2:
+      VPC: "vpc-7bb51b1c"
+      Subnets:
+      - subnet-61dd1306
+      - subnet-c23c6498
+      - subnet-4aea0b03
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Join ["", [!Ref ProjectName, "-ecs-sg"]]
+      GroupDescription: "Fargate service security group"
+      VpcId: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "VPC"]
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: !Ref IngressFromPort
+          ToPort: !Ref IngressToPort
+          CidrIp: !Ref MyIP
+
+  ECSCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: !Join ["", [!Ref ProjectName, "-cluster"]]
+
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ["", [!Ref ProjectName, "-task-execution-role"]]
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - "ecs-tasks.amazonaws.com"
+          Action:
+            - "sts:AssumeRole"
+      Path: /
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      Policies:
+      -
+        PolicyName: "CreateLogGroup"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          -
+            Effect: "Allow"
+            Action: "logs:CreateLogGroup"
+            Resource: "*"
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ["", [!Ref ProjectName, "-task-role"]]
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "ecs-tasks.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: /
+      Policies:
+      -
+        PolicyName: "KmsDecrypt"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          -
+            Effect: "Allow"
+            Action: "kms:Decrypt"
+            Resource: "*"
+
+  TaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      Cpu: !Ref ContainerCpu
+      Memory: !Ref ContainerMemory
+      NetworkMode: "awsvpc"
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      RequiresCompatibilities:
+      - "FARGATE"
+      ContainerDefinitions:
+      - Image: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.", !Ref "AWS::Region", ".amazonaws.com/", !Ref RepositoryName, ":", !Ref ProjectVersion]]
+        Name: !Ref ProjectName
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-create-group: true
+            awslogs-group: !Join ["", ["/ecs/", !Ref ProjectName]]
+            awslogs-region: !Ref "AWS::Region"
+            awslogs-stream-prefix: "ecs"
+        Environment:
+          - Name: PROJECT_NAME
+            Value: !Ref ProjectName
+          - Name: PROJECT_VERSION
+            Value: !Ref ProjectVersion
+
+  ECSService:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: !Ref DesiredCount
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroup
+          Subnets: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "Subnets"]
+      ServiceName: !Ref ProjectName
+      TaskDefinition: !Ref TaskDefinition
